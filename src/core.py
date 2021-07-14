@@ -58,7 +58,39 @@ def get_data_tokens(message_line):
     return date, time, author, message
 
 
+def chat_parser(chat_file):
+    """ Feeds parsed chat to pandas dataframe"""
+    parsedData = []     # track data to feed dataframe
 
+    with open(chat_file, mode='r', encoding='utf8') as chat:
+        message_buffer = []
+        date, time, author = None, None, None
+
+        while True:
+            line = chat.readline()  # '\n' is also parsed.
+            if line:
+                line = line.strip()
+                if startswith_datetime(line):   # independent message instance
+                    if len(message_buffer) > 0: # adds previous msg_tokens to parsedData
+                        parsedData.append([date,time,author,' '.join(message_buffer)])
+
+                    message_buffer.clear() # initialise for message in this iteration
+                    date, time, author, message = get_data_tokens(message_line=line)
+                    message_buffer.append(message)
+                    # adds to parsedData only when it confirms that next line is unique message
+                    # else keeps in buffer
+                else:
+                    message_buffer.append(line)
+            else:
+                # No line imply end of file
+                # adds previous msg_tokens to parsedData (last message)
+                if len(message_buffer) > 0: 
+                    parsedData.append([date,time,author,' '.join(message_buffer)])
+                break
+    
+    # Feed parsed Data to pandas dataframe
+    df = pd.DataFrame(parsedData, columns=['Date','Time','Author','Message'])
+    
 
 
 

@@ -90,7 +90,43 @@ def chat_parser(chat_file):
     
     # Feed parsed Data to pandas dataframe
     df = pd.DataFrame(parsedData, columns=['Date','Time','Author','Message'])
+
+
+# -----------------------------------------------------------------------------
+def drop_sys_msg(df):
+    """ Drops all system generated messages in dataframe """
+
+    drop_msg_count = df['author'].isnull().sum()
+
+    df.dropna(inplace=True)
+
+    print(f"Detected <{drop_msg_count}> system-generated-messages. Dropping off...")
+
+def url_counter(message_line):
+    """ Returns the total number of urls detected in the message """
+    url_pattern = get_pattern('URL')
+    count = len(re.findall(url_pattern, message_line))
+    return count
+
+def chat_analyzer(df):
+    """ Analyze chat parsed into pandas dataframe """
     
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    drop_sys_msg(df)
+
+    messages_count = df.shape[0]
+    media_msg_count = df[df['Message'] == '<Media omitted>'].shape[0]
+
+    df['urlcount'] = df.Message.apply(url_counter)
+
+    links_count = df.urlcount.sum()
+
+    # original df remains unaffected. Operations are not inplace.
+    media_messages_df = df[df['Message'] == "<Media omitted>"]
+    messages_df = df.drop(media_messages_df.index)
+
+    messages_df['Word_count'] = messages_df['Message'].apply(lambda s: len(s.split(' ')))
 
 
 
